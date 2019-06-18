@@ -286,7 +286,7 @@ class QSAN():
         capacity = self._VDs.get(id)['capacity'].replace(' ', '')
 
         # F600Q (SANOS3?) compatibility
-        if 'TB' not in capacity:
+        if 'TB' not in capacity and 'GB' not in capacity:
             new_capacity = str(round(float(capacity) / 1024 / 1024, 1))
             capacity = new_capacity + 'TB'
 
@@ -325,11 +325,11 @@ class QSAN():
 
                     vd = {udv.find('id').text: attrs}
                     VDs.update(vd)
-                else:
-                    page += 1
 
             if len(VDs) == VD_count:
                 break
+
+            page += 1
 
         self._VDs = VDs
 
@@ -787,6 +787,10 @@ class QSAN():
         Forms name of FC port by givend port id. No spaces allowed
         Returns: CTR2_FC4_(16Gb)
         """
+        fc = self._FCs.get(port)
+        if not fc:
+            return None
+
         fcport = (
             '_'.join([self._FCs.get(port)['ctr'],
                       self._FCs.get(port)['name']
@@ -924,6 +928,8 @@ class Zabbix():
         for port, params in self._qsan.fc_stats().items():
             # get port name
             n = self._qsan._get_FC_port_name_by_id(port)
+            if not n:
+                continue
 
             for param, value in params.items():
                 print('\t'.join([zhost,
